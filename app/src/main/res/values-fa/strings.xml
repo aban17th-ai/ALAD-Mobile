@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ALAD</string>
-    <string name="app_name_full">ALAD (دوبله زنده صوتی با هوش مصنوعی)</string>
+    <string name="app_name">Alsadidub</string>
+    <string name="app_name_full">Alsadidub | پخش‌کننده ویدیو با تأخیر تصویر</string>
     <string name="system_status">وضعیت سیستم</string>
     <string name="status_connected">دوبله زنده فعال است</string>
     <string name="status_disconnected">آماده به کار (قطع)</string>
