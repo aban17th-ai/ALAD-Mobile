@@ -59,7 +59,8 @@ fun MainScreen(
     viewModel: MainViewModel,
     onNavigateToSettings: () -> Unit,
     onConnectClicked: () -> Unit,
-    onDisconnectClicked: () -> Unit
+    onDisconnectClicked: () -> Unit,
+    onNavigateToPlayer: () -> Unit
 ) {
     val isConnected by viewModel.isConnected.collectAsState()
     val amplitude by viewModel.audioAmplitude.collectAsState()
@@ -217,6 +218,13 @@ fun MainScreen(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        GlassIconButton(
+                            icon = Icons.Default.PlayCircle,
+                            contentDescription = "Delayed Video Player",
+                            onClick = onNavigateToPlayer,
+                            tint = NeonCyan
+                        )
+
                         GlassIconButton(
                             icon = Icons.Default.Info,
                             contentDescription = "Help",
