@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ALAD</string>
-    <string name="app_name_full">ALAD (Live Audio Dubbing Mobile)</string>
+    <string name="app_name">Alsadidub</string>
+    <string name="app_name_full">Alsadidub Video Player</string>
     <string name="system_status">System Status</string>
     <string name="status_connected">Live Dubbing Active</string>
     <string name="status_disconnected">Ready / Disconnected</string>
