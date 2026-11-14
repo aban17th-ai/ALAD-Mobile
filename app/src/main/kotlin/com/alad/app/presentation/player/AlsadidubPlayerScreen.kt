@@ -47,6 +47,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import com.alad.app.core.player.DelayedMedia3Player
 import kotlinx.coroutines.delay
@@ -75,7 +77,20 @@ fun AlsadidubPlayerScreen(onBack: () -> Unit) {
     }
 
     DisposableEffect(controller) {
-        onDispose { controller.release() }
+        val playbackErrorListener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                message = "خطای پخش رسانه: ${error.errorCodeName}؛ لینک ممکن است محدود یا غیرقابل پخش باشد."
+                isLoaded = false
+                isPlaying = false
+            }
+        }
+        controller.audioPlayer.addListener(playbackErrorListener)
+        controller.videoPlayer.addListener(playbackErrorListener)
+        onDispose {
+            controller.audioPlayer.removeListener(playbackErrorListener)
+            controller.videoPlayer.removeListener(playbackErrorListener)
+            controller.release()
+        }
     }
 
     LaunchedEffect(controller, isLoaded) {
@@ -147,13 +162,14 @@ fun AlsadidubPlayerScreen(onBack: () -> Unit) {
                         controller.setDelay(delaySeconds)
                         resolvedTitle = result.optString("title", "")
                         isLoaded = true
-                        isPlaying = false
                         position = 0L
                         message = if (resolvedTitle.isNotBlank()) {
-                            "لینک آماده پخش شد: $resolvedTitle"
+                            "در حال شروع پخش: $resolvedTitle"
                         } else {
-                            "لینک آماده پخش است."
+                            "لینک دریافت شد؛ پخش در حال شروع است."
                         }
+                        controller.play()
+                        isPlaying = true
                     } catch (error: Exception) {
                         message = error.message ?: "دریافت لینک ویدیو ناموفق بود."
                         isLoaded = false
