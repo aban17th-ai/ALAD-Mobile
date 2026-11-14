@@ -25,6 +25,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +37,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.ui.PlayerView
 import com.alad.app.core.player.DelayedMedia3Player
@@ -52,7 +62,17 @@ fun AlsadidubPlayerScreen(onBack: () -> Unit) {
     var isPlaying by remember { mutableStateOf(false) }
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
-    var message by remember { mutableStateOf("لینک مستقیم ویدیو را وارد کنید.") }
+    var message by remember { mutableStateOf("لینک یوتیوب یا لینک مستقیم ویدیو را وارد کنید.") }
+    var isResolving by remember { mutableStateOf(false) }
+    var resolvedTitle by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val httpClient = remember {
+        OkHttpClient.Builder()
+            .connectTimeout(25, TimeUnit.SECONDS)
+            .readTimeout(100, TimeUnit.SECONDS)
+            .callTimeout(110, TimeUnit.SECONDS)
+            .build()
+    }
 
     DisposableEffect(controller) {
         onDispose { controller.release() }
@@ -86,28 +106,67 @@ fun AlsadidubPlayerScreen(onBack: () -> Unit) {
             value = url,
             onValueChange = { url = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("لینک مستقیم ویدیو") },
-            placeholder = { Text("https://example.com/video.mp4") },
+            label = { Text("لینک ویدیو") },
+            placeholder = { Text("لینک YouTube یا آدرس مستقیم MP4") },
             singleLine = true
         )
 
         Button(
             onClick = {
-                try {
-                    controller.load(url)
-                    controller.setAudioVolume(volume)
-                    controller.setDelay(delaySeconds)
-                    isLoaded = true
-                    isPlaying = false
-                    position = 0L
-                    message = "ویدیو آماده پخش است."
-                } catch (error: Exception) {
-                    message = error.message ?: "بارگذاری ویدیو ناموفق بود."
+                scope.launch {
+                    isResolving = true
                     isLoaded = false
+                    message = "در حال دریافت لینک قابل پخش از سرویس..."
+                    try {
+                        val result = withContext(Dispatchers.IO) {
+                            val json = JSONObject().put("url", url.trim())
+                            val body = json.toString()
+                                .toRequestBody("application/json; charset=utf-8".toMediaType())
+                            val request = Request.Builder()
+                                .url("https://chatgptdub.onrender.com/v1/media/resolve")
+                                .post(body)
+                                .build()
+                            httpClient.newCall(request).execute().use { response ->
+                                val responseText = response.body?.string().orEmpty()
+                                val payload = if (responseText.isNotBlank()) JSONObject(responseText) else JSONObject()
+                                if (!response.isSuccessful) {
+                                    throw IllegalStateException(
+                                        payload.optString("detail", "سرویس دریافت لینک پاسخ مناسبی نداد.")
+                                    )
+                                }
+                                payload
+                            }
+                        }
+                        val audioUrl = result.optString("audio_url")
+                        val videoUrl = result.optString("video_url")
+                        if (audioUrl.isBlank() || videoUrl.isBlank()) {
+                            throw IllegalStateException("لینک صدا یا تصویر از سرویس دریافت نشد.")
+                        }
+                        controller.load(audioUrl, videoUrl)
+                        controller.setAudioVolume(volume)
+                        controller.setDelay(delaySeconds)
+                        resolvedTitle = result.optString("title", "")
+                        isLoaded = true
+                        isPlaying = false
+                        position = 0L
+                        message = if (resolvedTitle.isNotBlank()) {
+                            "لینک آماده پخش شد: $resolvedTitle"
+                        } else {
+                            "لینک آماده پخش است."
+                        }
+                    } catch (error: Exception) {
+                        message = error.message ?: "دریافت لینک ویدیو ناموفق بود."
+                        isLoaded = false
+                    } finally {
+                        isResolving = false
+                    }
                 }
             },
+            enabled = url.isNotBlank() && !isResolving,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("بارگذاری لینک") }
+        ) {
+            Text(if (isResolving) "در حال دریافت لینک..." else "دریافت لینک و آماده‌سازی پخش")
+        }
 
         AndroidView(
             modifier = Modifier
