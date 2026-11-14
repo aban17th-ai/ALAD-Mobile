@@ -24,6 +24,7 @@ import com.alad.app.data.repository.UserPreferencesRepository
 import com.alad.app.presentation.main.MainScreen
 import com.alad.app.presentation.main.MainViewModel
 import com.alad.app.presentation.main.MainViewModelFactory
+import com.alad.app.presentation.player.AlsadidubPlayerScreen
 import com.alad.app.presentation.settings.SettingsScreen
 import com.alad.app.presentation.settings.SettingsViewModel
 import com.alad.app.presentation.settings.SettingsViewModelFactory
@@ -78,8 +79,12 @@ class MainActivity : ComponentActivity() {
                                 viewModel = mainViewModel,
                                 onNavigateToSettings = { currentScreen = "SETTINGS" },
                                 onConnectClicked = { checkPermissionsAndConnect() },
-                                onDisconnectClicked = { stopDubbingService() }
+                                onDisconnectClicked = { stopDubbingService() },
+                                onNavigateToPlayer = { currentScreen = "PLAYER" }
                             )
+                        }
+                        "PLAYER" -> {
+                            AlsadidubPlayerScreen(onBack = { currentScreen = "MAIN" })
                         }
                         "SETTINGS" -> {
                             val settingsViewModel: SettingsViewModel = viewModel(
