@@ -35,15 +35,20 @@ class DelayedMedia3Player(context: Context) {
             .build()
     }
 
-    fun load(url: String) {
-        val cleanUrl = url.trim()
-        require(cleanUrl.startsWith("https://") || cleanUrl.startsWith("http://")) {
-            "لطفاً یک لینک مستقیم HTTP یا HTTPS وارد کنید."
+    fun load(url: String) = load(url, url)
+
+    fun load(audioUrl: String, videoUrl: String) {
+        val cleanAudioUrl = audioUrl.trim()
+        val cleanVideoUrl = videoUrl.trim()
+        require(cleanAudioUrl.startsWith("https://") || cleanAudioUrl.startsWith("http://")) {
+            "لینک صدای دریافت‌شده معتبر نیست."
+        }
+        require(cleanVideoUrl.startsWith("https://") || cleanVideoUrl.startsWith("http://")) {
+            "لینک تصویر دریافت‌شده معتبر نیست."
         }
         stop()
-        val item = MediaItem.fromUri(cleanUrl)
-        audioPlayer.setMediaItem(item)
-        videoPlayer.setMediaItem(item)
+        audioPlayer.setMediaItem(MediaItem.fromUri(cleanAudioUrl))
+        videoPlayer.setMediaItem(MediaItem.fromUri(cleanVideoUrl))
         audioPlayer.prepare()
         videoPlayer.prepare()
     }
