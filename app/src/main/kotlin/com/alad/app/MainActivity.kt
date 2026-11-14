@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var currentScreen by remember { mutableStateOf("MAIN") }
+                    var currentScreen by remember { mutableStateOf("PLAYER") }
                     
                     when (currentScreen) {
                         "MAIN" -> {
@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         "PLAYER" -> {
-                            AlsadidubPlayerScreen(onBack = { currentScreen = "MAIN" })
+                            AlsadidubPlayerScreen(onBack = { finish() })
                         }
                         "SETTINGS" -> {
                             val settingsViewModel: SettingsViewModel = viewModel(
